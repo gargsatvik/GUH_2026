@@ -10,7 +10,8 @@
     "test": "vitest run",
     "check:patterns": "vitest run tests/patterns.test.ts",
     "gen:seed": "node scripts/gen-seed-sql.ts > supabase/seed.sql",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "setup:voice": "node scripts/setup-elevenlabs-agent.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",

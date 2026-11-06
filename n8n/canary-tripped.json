@@ -49,7 +49,7 @@
             {
               "id": "25632c6a-a91f-4ecc-8d38-65a629f378d9",
               "name": "CHAT_WEBHOOK_URL",
-              "value": "PASTE DISCORD OR SLACK WEBHOOK URL",
+              "value": "",
               "type": "string"
             }
           ]
@@ -101,7 +101,9 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ content: 'Decoy details used: ' + $('Decoy details used').item.json.body.detail.attempt + '. ' + $('Decoy details used').item.json.body.detail.device + ', ' + $('Decoy details used').item.json.body.detail.location + '. Declined.', text: 'Decoy details used: ' + $('Decoy details used').item.json.body.detail.attempt + '. ' + $('Decoy details used').item.json.body.detail.device + ', ' + $('Decoy details used').item.json.body.detail.location + '. Declined.' }) }}",
         "options": {}
-      }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Optional. Posts to the #fraud-ops Discord or Slack channel set in Config."
     },
     {
       "id": "895a2dd8-1816-4c10-b7be-0cac75d73a3b",

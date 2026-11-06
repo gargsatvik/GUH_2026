@@ -33,7 +33,8 @@ Without voice keys, try the whole story with replay: open `/ops`, press `D`, the
 1. Copy `.env.example` to `.env.local` (and to Vercel) and fill in what you have. Each service is optional and falls back on its own.
 2. Supabase: run `supabase/schema.sql`, then `supabase/seed.sql` in the SQL editor. `seed.sql` is generated from `src/lib/seed.ts` with `npm run gen:seed`.
 3. ElevenLabs: create the agents in `agents/decoy-david.md` (and `agents/protect-check.md` for the coaching check).
-4. n8n: import the four files in `n8n/`, fill in the **Config** node in each (app URL, shared secret, Discord or Slack webhook), set the Header Auth credential on each webhook (`x-decoy-secret`), activate, and put the production webhook URLs in the env vars. Set `N8N_ENABLED=true`.
+4. n8n on your laptop (for testing): from the project folder, `npm --prefix n8n-local run start` starts n8n at http://localhost:5678 with the four workflows already loaded and published (the `n8n-local` folder sits next to this repo and is not part of it). Create the owner account the first time you open it. The app reads the webhook URLs and shared secret from `.env.local`.
+5. n8n Cloud (for the demo): import the four files in `n8n/`, fill in the **Config** node in each (app URL, shared secret, and optionally a Discord or Slack webhook; chat steps are skipped when it is empty), set the Header Auth credential on each webhook (`x-decoy-secret`), activate, and put the production webhook URLs in the env vars. Set `N8N_ENABLED=true`.
 
 ## Demo checklist (plan section 25.1)
 

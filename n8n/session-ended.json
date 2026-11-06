@@ -49,7 +49,7 @@
             {
               "id": "b990e45b-58bd-4da9-b4c3-3bf7801bef5d",
               "name": "CHAT_WEBHOOK_URL",
-              "value": "PASTE DISCORD OR SLACK WEBHOOK URL",
+              "value": "",
               "type": "string"
             }
           ]
@@ -57,65 +57,32 @@
       }
     },
     {
-      "id": "647232db-ba1a-4211-aeea-7f3a94433ff0",
-      "name": "Write report",
+      "id": "0f0a9808-f4e8-4022-8102-1f55dd1311ac",
+      "name": "Write report (Claude)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         440,
         200
       ],
+      "notes": "The app writes the report with Claude (template if no Anthropic key is set).",
       "parameters": {
         "method": "POST",
-        "url": "https://api.anthropic.com/v1/messages",
+        "url": "={{ $('Config').item.json.APP_BASE_URL }}/api/actions/draft-report",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "x-api-key",
-              "value": "PASTE ANTHROPIC_API_KEY (or use an n8n credential)"
-            },
-            {
-              "name": "anthropic-version",
-              "value": "2023-06-01"
+              "name": "x-decoy-secret",
+              "value": "={{ $('Config').item.json.DECOY_SECRET }}"
             }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 4000, output_config: { effort: 'low' }, system: \"You write fraud intelligence reports for a UK bank's fraud operations team. Write in plain, factual British English. No speculation beyond the evidence. Use short sections with these headings exactly: Summary, What the caller asked for, Details captured, Links to earlier reports, Actions already taken, Suggested next steps. Use a table for Details captured. Keep the whole report under 350 words. Do not include decoy details read out by the decoy.\\n\\nFormat the report in Markdown, using \\\"## \\\" for each heading. Do not add a title line; the title is shown separately. Write only the report.\", messages: [{ role: 'user', content: JSON.stringify($('Call ended').item.json.body) }] }) }}",
+        "jsonBody": "={{ JSON.stringify($('Call ended').item.json.body) }}",
         "options": {
-          "timeout": 60000
-        }
-      }
-    },
-    {
-      "id": "6efcd12b-3d50-4fdd-8a78-0f6feb09533c",
-      "name": "Shape report",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        660,
-        200
-      ],
-      "parameters": {
-        "mode": "manual",
-        "options": {},
-        "assignments": {
-          "assignments": [
-            {
-              "id": "1a504ca7-389b-4038-b689-08dcbbed9839",
-              "name": "title",
-              "value": "={{ 'Fraud report: ' + (($('Call ended').item.json.body.call.scam_type || 'scam call').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())) + ', ' + $now.setZone('Europe/London').toFormat('d LLL yyyy, HH:mm') }}",
-              "type": "string"
-            },
-            {
-              "id": "3b79d289-afa8-49e4-9e9a-0f8ede5da66c",
-              "name": "bodyMd",
-              "value": "={{ $json.content.filter(b => b.type === 'text').map(b => b.text).join('') }}",
-              "type": "string"
-            }
-          ]
+          "timeout": 30000
         }
       }
     },
@@ -125,7 +92,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        880,
+        660,
         200
       ],
       "parameters": {
@@ -154,7 +121,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1100,
+        880,
         200
       ],
       "parameters": {
@@ -162,9 +129,11 @@
         "url": "={{ $('Config').item.json.CHAT_WEBHOOK_URL }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ content: 'Fraud report ready: ' + $('Shape report').item.json.title + '. ' + $('Config').item.json.APP_BASE_URL + '/ops/reports/' + $json.id, text: 'Fraud report ready: ' + $('Shape report').item.json.title + '. ' + $('Config').item.json.APP_BASE_URL + '/ops/reports/' + $json.id }) }}",
+        "jsonBody": "={{ JSON.stringify({ content: 'Fraud report ready: ' + $('Write report (Claude)').item.json.title + '. ' + $('Config').item.json.APP_BASE_URL + '/ops/reports/' + $json.id, text: 'Fraud report ready: ' + $('Write report (Claude)').item.json.title + '. ' + $('Config').item.json.APP_BASE_URL + '/ops/reports/' + $json.id }) }}",
         "options": {}
-      }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Optional. Posts to the #fraud-ops Discord or Slack channel set in Config."
     }
   ],
   "connections": {
@@ -183,25 +152,14 @@
       "main": [
         [
           {
-            "node": "Write report",
+            "node": "Write report (Claude)",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Write report": {
-      "main": [
-        [
-          {
-            "node": "Shape report",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Shape report": {
+    "Write report (Claude)": {
       "main": [
         [
           {

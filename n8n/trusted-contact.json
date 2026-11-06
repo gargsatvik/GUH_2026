@@ -49,7 +49,7 @@
             {
               "id": "17f38c39-36b4-421f-ab6b-1fb3bc3b502b",
               "name": "CHAT_WEBHOOK_URL",
-              "value": "PASTE DISCORD OR SLACK WEBHOOK URL",
+              "value": "",
               "type": "string"
             }
           ]
@@ -72,7 +72,9 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ content: 'Hi Claire. Margaret is trying to pay ' + $('Payment paused').item.json.body.amount + ' to ' + $('Payment paused').item.json.body.payee + '. We paused it because the account was reported in a scam call. Please check it: ' + $('Config').item.json.APP_BASE_URL + '/ally?payment=' + $('Payment paused').item.json.body.paymentId, text: 'Hi Claire. Margaret is trying to pay ' + $('Payment paused').item.json.body.amount + ' to ' + $('Payment paused').item.json.body.payee + '. We paused it because the account was reported in a scam call. Please check it: ' + $('Config').item.json.APP_BASE_URL + '/ally?payment=' + $('Payment paused').item.json.body.paymentId }) }}",
         "options": {}
-      }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Optional. Posts to the #fraud-ops Discord or Slack channel set in Config."
     },
     {
       "id": "abdd36e5-77bc-46d7-a393-18e06ef4cd6c",
