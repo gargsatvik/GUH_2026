@@ -1,26 +1,198 @@
 @import "tailwindcss";
 
+/* Design tokens (plan section 20.1) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #faf9f7;
+  --surface: #ffffff;
+  --ink: #14121a;
+  --muted: #6b6577;
+  --line: #e7e4ee;
+  --brand: #3c1053;
+  --brand-hover: #2e0c40;
+  --brand-tint: #f3eef7;
+  --danger: #b42318;
+  --danger-tint: #fdf1f0;
+  --warning: #b54708;
+  --warning-tint: #fff6e5;
+  --success: #1f7a4d;
+  --success-tint: #eef7f1;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-tint: var(--brand-tint);
+  --color-danger: var(--danger);
+  --color-danger-tint: var(--danger-tint);
+  --color-warning: var(--warning);
+  --color-warning-tint: var(--warning-tint);
+  --color-success: var(--success);
+  --color-success-tint: var(--success-tint);
+
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-source-serif);
+  --font-mono: var(--font-jetbrains);
+
+  --radius-card: 10px;
+  --radius-control: 8px;
+
+  --shadow-card: 0 1px 2px rgba(20, 18, 26, 0.04);
+  --shadow-raised: 0 8px 24px rgba(20, 18, 26, 0.08);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  background: var(--paper);
+  color: var(--ink);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.font-serif {
+  letter-spacing: -0.01em;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Motion (section 20.5) */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.rise-in {
+  animation: rise-in 180ms ease-out both;
+}
+
+@keyframes pop-in {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.pop-in {
+  animation: pop-in 200ms ease-out both;
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.slide-down {
+  animation: slide-down 200ms ease-out both;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 currentColor;
+    opacity: 1;
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+.live-dot {
+  animation: pulse-ring 1.6s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in,
+  .pop-in,
+  .slide-down,
+  .live-dot,
+  .spin {
+    animation: none !important;
+  }
+}
+
+/* Report body (markdown) */
+.prose-report h2 {
+  font-family: var(--font-source-serif), serif;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  margin: 24px 0 8px;
+}
+.prose-report p {
+  margin: 8px 0;
+  line-height: 24px;
+}
+.prose-report ul {
+  list-style: disc;
+  padding-left: 20px;
+  margin: 8px 0;
+}
+.prose-report li {
+  margin: 4px 0;
+}
+.prose-report table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 14px;
+}
+.prose-report th,
+.prose-report td {
+  border-bottom: 1px solid var(--line);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+.prose-report th {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
 }

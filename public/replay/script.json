@@ -1,0 +1,16 @@
+[
+  { "speaker": "decoy", "text": "Hello? Sorry, this is David, I'm Margaret's son. She's handed me the phone, she said it's the bank? She gets a bit flustered with all this. What's happened?", "delayMs": 1500 },
+  { "speaker": "caller", "text": "Hi David. Daniel Hughes, NatWest fraud team. Your mum's account has been compromised. We need to move her savings to a safe account today.", "delayMs": 4500 },
+  { "speaker": "decoy", "text": "Oh no. Right, okay. Erm, sorry, Daniel was it? Can I take a number for you, in case we get cut off? The signal's awful here.", "delayMs": 4000 },
+  { "speaker": "caller", "text": "You can call me back on oh one six one, four nine six, oh seven three two.", "delayMs": 4500 },
+  { "speaker": "decoy", "text": "Hang on, let me find a pen. Right. Oh one six one, four nine six, oh seven three two. Got it. So what do you need me to do?", "delayMs": 5000 },
+  { "speaker": "caller", "text": "The safe account is sort code twenty, forty-five, seventy-seven. Account number six three eight four, nine one two oh. Name, J Carter.", "delayMs": 6000 },
+  { "speaker": "decoy", "text": "Sorry, can you say that slowly? So that's twenty, forty-five, seventy-seven, and six three eight four, nine one two six?", "delayMs": 5000 },
+  { "speaker": "caller", "text": "No. Nine one two oh. Six three eight four, nine one two oh. J Carter.", "delayMs": 4000 },
+  { "speaker": "decoy", "text": "Nine one two oh, sorry. Six three eight four, nine one two oh, J Carter. And how much is it you want moved?", "delayMs": 4500 },
+  { "speaker": "caller", "text": "Move two thousand pounds now. The rest once that's cleared.", "delayMs": 3500 },
+  { "speaker": "decoy", "text": "Two thousand. Right. The app's doing the spinning circle again, bear with me. Is this the same as what happened to our neighbour?", "delayMs": 5000 },
+  { "speaker": "caller", "text": "David, please hurry, every minute they're taking more money.", "delayMs": 3500 },
+  { "speaker": "decoy", "text": "I'm doing my best, honestly. It's asking for something now. Mum, where are my glasses?", "delayMs": 4500 },
+  { "speaker": "caller", "text": "Forget it.", "delayMs": 3000 }
+]

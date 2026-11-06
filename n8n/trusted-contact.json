@@ -1,0 +1,146 @@
+{
+  "name": "trusted-contact",
+  "nodes": [
+    {
+      "id": "41e2e971-8b84-4dcf-b289-7742c81665ca",
+      "name": "Payment paused",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "52e06571-ae22-4829-ad07-ac9e95b2ed96",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "decoy-ally",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "59958e5b-678c-4085-ae06-a0049ca5c051",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9dc1a1f5-48be-4aa4-8d81-f620d9240e54",
+              "name": "APP_BASE_URL",
+              "value": "https://YOUR-APP.vercel.app",
+              "type": "string"
+            },
+            {
+              "id": "790874ab-69cb-481f-a01c-910323287a3d",
+              "name": "DECOY_SECRET",
+              "value": "PASTE N8N_SHARED_SECRET",
+              "type": "string"
+            },
+            {
+              "id": "17f38c39-36b4-421f-ab6b-1fb3bc3b502b",
+              "name": "CHAT_WEBHOOK_URL",
+              "value": "PASTE DISCORD OR SLACK WEBHOOK URL",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "5a5595f5-317a-4def-a9f7-c129902b9029",
+      "name": "Message trusted contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').item.json.CHAT_WEBHOOK_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ content: 'Hi Claire. Margaret is trying to pay ' + $('Payment paused').item.json.body.amount + ' to ' + $('Payment paused').item.json.body.payee + '. We paused it because the account was reported in a scam call. Please check it: ' + $('Config').item.json.APP_BASE_URL + '/ally?payment=' + $('Payment paused').item.json.body.paymentId, text: 'Hi Claire. Margaret is trying to pay ' + $('Payment paused').item.json.body.amount + ' to ' + $('Payment paused').item.json.body.payee + '. We paused it because the account was reported in a scam call. Please check it: ' + $('Config').item.json.APP_BASE_URL + '/ally?payment=' + $('Payment paused').item.json.body.paymentId }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "abdd36e5-77bc-46d7-a393-18e06ef4cd6c",
+      "name": "Record",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').item.json.APP_BASE_URL }}/api/actions/timeline",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-decoy-secret",
+              "value": "={{ $('Config').item.json.DECOY_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ kind: 'ally', title: 'Claire has been asked to check this payment', detail: $('Payment paused').item.json.body.amount + ' to ' + $('Payment paused').item.json.body.payee }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Payment paused": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Message trusted contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message trusted contact": {
+      "main": [
+        [
+          {
+            "node": "Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

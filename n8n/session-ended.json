@@ -1,0 +1,231 @@
+{
+  "name": "session-ended",
+  "nodes": [
+    {
+      "id": "1db1e690-4cd9-45ea-83b1-9377b20c8c8a",
+      "name": "Call ended",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "0369958a-bdfc-4059-8393-2228c7532ddc",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "decoy-session-ended",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "0eca4d0d-2eac-4bca-866b-ed69976887f2",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1d6b194-4863-4331-8f1e-3b5374c83b1c",
+              "name": "APP_BASE_URL",
+              "value": "https://YOUR-APP.vercel.app",
+              "type": "string"
+            },
+            {
+              "id": "50c32058-83b4-4fa7-b77c-16c6c8373f4a",
+              "name": "DECOY_SECRET",
+              "value": "PASTE N8N_SHARED_SECRET",
+              "type": "string"
+            },
+            {
+              "id": "b990e45b-58bd-4da9-b4c3-3bf7801bef5d",
+              "name": "CHAT_WEBHOOK_URL",
+              "value": "PASTE DISCORD OR SLACK WEBHOOK URL",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "647232db-ba1a-4211-aeea-7f3a94433ff0",
+      "name": "Write report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "PASTE ANTHROPIC_API_KEY (or use an n8n credential)"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 4000, output_config: { effort: 'low' }, system: \"You write fraud intelligence reports for a UK bank's fraud operations team. Write in plain, factual British English. No speculation beyond the evidence. Use short sections with these headings exactly: Summary, What the caller asked for, Details captured, Links to earlier reports, Actions already taken, Suggested next steps. Use a table for Details captured. Keep the whole report under 350 words. Do not include decoy details read out by the decoy.\\n\\nFormat the report in Markdown, using \\\"## \\\" for each heading. Do not add a title line; the title is shown separately. Write only the report.\", messages: [{ role: 'user', content: JSON.stringify($('Call ended').item.json.body) }] }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      }
+    },
+    {
+      "id": "6efcd12b-3d50-4fdd-8a78-0f6feb09533c",
+      "name": "Shape report",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1a504ca7-389b-4038-b689-08dcbbed9839",
+              "name": "title",
+              "value": "={{ 'Fraud report: ' + (($('Call ended').item.json.body.call.scam_type || 'scam call').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())) + ', ' + $now.setZone('Europe/London').toFormat('d LLL yyyy, HH:mm') }}",
+              "type": "string"
+            },
+            {
+              "id": "3b79d289-afa8-49e4-9e9a-0f8ede5da66c",
+              "name": "bodyMd",
+              "value": "={{ $json.content.filter(b => b.type === 'text').map(b => b.text).join('') }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "c6f6f7a4-4612-424d-851a-719a0f2fc67d",
+      "name": "Save report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').item.json.APP_BASE_URL }}/api/actions/report",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-decoy-secret",
+              "value": "={{ $('Config').item.json.DECOY_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ callId: $('Call ended').item.json.body.callId, title: $json.title, bodyMd: $json.bodyMd, sentTo: 'Fraud Operations' }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "bf8d7ac1-d7f0-45ef-ab17-2e8993a08ef2",
+      "name": "Share report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').item.json.CHAT_WEBHOOK_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ content: 'Fraud report ready: ' + $('Shape report').item.json.title + '. ' + $('Config').item.json.APP_BASE_URL + '/ops/reports/' + $json.id, text: 'Fraud report ready: ' + $('Shape report').item.json.title + '. ' + $('Config').item.json.APP_BASE_URL + '/ops/reports/' + $json.id }) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Call ended": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Write report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write report": {
+      "main": [
+        [
+          {
+            "node": "Shape report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape report": {
+      "main": [
+        [
+          {
+            "node": "Save report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save report": {
+      "main": [
+        [
+          {
+            "node": "Share report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

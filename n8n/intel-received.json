@@ -1,0 +1,328 @@
+{
+  "name": "intel-received",
+  "nodes": [
+    {
+      "id": "c1b68df8-a4b9-43a9-9ee8-ab9209e6a46d",
+      "name": "Intel received",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "6b068c59-b868-4448-803e-387e920436a3",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "decoy-intel",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "b184eded-8a47-4432-8ad9-2bdfcaac541c",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0b6ef0c7-30e6-4800-843b-4fcc69fda15f",
+              "name": "APP_BASE_URL",
+              "value": "https://YOUR-APP.vercel.app",
+              "type": "string"
+            },
+            {
+              "id": "a880fc97-7b88-4212-ab2b-432c37a98ce8",
+              "name": "DECOY_SECRET",
+              "value": "PASTE N8N_SHARED_SECRET",
+              "type": "string"
+            },
+            {
+              "id": "254e3b57-d952-457b-a02c-7756c768b95d",
+              "name": "CHAT_WEBHOOK_URL",
+              "value": "PASTE DISCORD OR SLACK WEBHOOK URL",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "249f68b2-fa87-4b84-aedc-f0fd036a7d0b",
+      "name": "Split new details",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        440,
+        100
+      ],
+      "parameters": {
+        "fieldToSplitOut": "body.newEntities",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1654397-442c-4c80-9b8e-2b97384918d8",
+      "name": "Is it an account?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "052e8947-652e-439b-bb47-3291c3a118fd",
+              "leftValue": "={{ $json.kind }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "account"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "82e32fdf-d901-4f0b-a755-08d22da08f19",
+      "name": "Block account",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').item.json.APP_BASE_URL }}/api/actions/flag-account",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-decoy-secret",
+              "value": "={{ $('Config').item.json.DECOY_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ entityId: $json.id, callId: $('Intel received').item.json.body.callId, reason: 'Named as the payee by a caller on the Decoy line' }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "c4a52a05-5154-49d7-a6e8-f1fb0e7e9bd6",
+      "name": "Note detail",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').item.json.APP_BASE_URL }}/api/actions/timeline",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-decoy-secret",
+              "value": "={{ $('Config').item.json.DECOY_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ callId: $('Intel received').item.json.body.callId, kind: 'capture', title: $json.kind === 'phone' ? 'Added ' + $json.display + ' to the scam number list' : $json.kind === 'url' ? 'Added link to the suspicious sites list' : $json.kind === 'wallet' ? 'Recorded wallet' : 'Recorded caller name', detail: $json.kind === 'phone' ? null : $json.display }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "7040284d-78c5-4e1d-8a8f-574e262cb438",
+      "name": "Tell Fraud Operations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').item.json.CHAT_WEBHOOK_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ content: 'New scam account blocked: ' + $('Is it an account?').item.json.display + ($('Is it an account?').item.json.label ? ' (' + $('Is it an account?').item.json.label + ')' : '') + '.' + ($('Intel received').item.json.body.suggestedCampaign ? ' Linked to ' + $('Intel received').item.json.body.suggestedCampaign.name + ($('Intel received').item.json.body.matches[0] ? ' through ' + $('Intel received').item.json.body.matches[0].display : '') + '.' : '') + ' Live call in progress.', text: 'New scam account blocked: ' + $('Is it an account?').item.json.display + ($('Is it an account?').item.json.label ? ' (' + $('Is it an account?').item.json.label + ')' : '') + '.' + ($('Intel received').item.json.body.suggestedCampaign ? ' Linked to ' + $('Intel received').item.json.body.suggestedCampaign.name + ($('Intel received').item.json.body.matches[0] ? ' through ' + $('Intel received').item.json.body.matches[0].display : '') + '.' : '') + ' Live call in progress.' }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "60d048ce-b08c-40e2-a838-5cda930b7fe7",
+      "name": "Any matches?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "815a8f9d-68ab-41cc-b66d-0b873bb84aa6",
+              "leftValue": "={{ $('Intel received').item.json.body.matches.length > 0 && !!$('Intel received').item.json.body.suggestedCampaign }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "f9615dfa-d0e7-4e67-972a-00ee36ff273b",
+      "name": "Link campaign",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        320
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').item.json.APP_BASE_URL }}/api/actions/link-campaign",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-decoy-secret",
+              "value": "={{ $('Config').item.json.DECOY_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ callId: $('Intel received').item.json.body.callId, campaignId: $('Intel received').item.json.body.suggestedCampaign.id }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Intel received": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Split new details",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Any matches?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split new details": {
+      "main": [
+        [
+          {
+            "node": "Is it an account?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is it an account?": {
+      "main": [
+        [
+          {
+            "node": "Block account",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Note detail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Block account": {
+      "main": [
+        [
+          {
+            "node": "Tell Fraud Operations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any matches?": {
+      "main": [
+        [
+          {
+            "node": "Link campaign",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

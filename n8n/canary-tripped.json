@@ -1,0 +1,186 @@
+{
+  "name": "canary-tripped",
+  "nodes": [
+    {
+      "id": "814bc4cd-719d-4c68-8347-b0c870b63017",
+      "name": "Decoy details used",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "0ccd1d5e-9b24-4cc5-8902-4009a80318a6",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "decoy-canary",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "d05f923b-fcd7-4170-9f38-4a0e679390b8",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8ffbf2bd-0ab6-4b72-ace0-5044833d26ce",
+              "name": "APP_BASE_URL",
+              "value": "https://YOUR-APP.vercel.app",
+              "type": "string"
+            },
+            {
+              "id": "45764b17-1b47-44a7-a2b3-6254977f2e97",
+              "name": "DECOY_SECRET",
+              "value": "PASTE N8N_SHARED_SECRET",
+              "type": "string"
+            },
+            {
+              "id": "25632c6a-a91f-4ecc-8d38-65a629f378d9",
+              "name": "CHAT_WEBHOOK_URL",
+              "value": "PASTE DISCORD OR SLACK WEBHOOK URL",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "3a26f375-e02c-4983-933d-9c6996875beb",
+      "name": "Record alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').item.json.APP_BASE_URL }}/api/actions/timeline",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-decoy-secret",
+              "value": "={{ $('Config').item.json.DECOY_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ callId: $('Decoy details used').item.json.body.callId, kind: 'canary', title: $('Decoy details used').item.json.body.kind === 'card' ? 'Decoy card used: \u00a3249.99 purchase attempt declined' : 'Decoy login used: sign-in attempt blocked', detail: $('Decoy details used').item.json.body.detail.device + '. ' + $('Decoy details used').item.json.body.detail.location + '. IP ' + $('Decoy details used').item.json.body.detail.ip + '.' }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "748f1f74-bbee-4f1d-8407-ffccc9b8b2c5",
+      "name": "Alert Fraud Operations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').item.json.CHAT_WEBHOOK_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ content: 'Decoy details used: ' + $('Decoy details used').item.json.body.detail.attempt + '. ' + $('Decoy details used').item.json.body.detail.device + ', ' + $('Decoy details used').item.json.body.detail.location + '. Declined.', text: 'Decoy details used: ' + $('Decoy details used').item.json.body.detail.attempt + '. ' + $('Decoy details used').item.json.body.detail.device + ', ' + $('Decoy details used').item.json.body.detail.location + '. Declined.' }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "895a2dd8-1816-4c10-b7be-0cac75d73a3b",
+      "name": "Add device to watch list",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').item.json.APP_BASE_URL }}/api/actions/timeline",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-decoy-secret",
+              "value": "={{ $('Config').item.json.DECOY_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ callId: $('Decoy details used').item.json.body.callId, kind: 'canary', title: 'Device and location added to watch list' }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Decoy details used": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Record alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record alert": {
+      "main": [
+        [
+          {
+            "node": "Alert Fraud Operations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Fraud Operations": {
+      "main": [
+        [
+          {
+            "node": "Add device to watch list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
